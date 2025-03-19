@@ -1,7 +1,44 @@
 ﻿@page "/"
 
+@using System.Timers
+
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="sectm">
+    <Card Class="sectmin">
+        <CardHeader>Japan</CardHeader>
+        <CardBody>
+            @currJP.ToString("yyyy-MM-dd HH:mm:ss")
+        </CardBody>
+    </Card>
+    <Card Class="sectmin">
+        <CardHeader>Hong Kong</CardHeader>
+        <CardBody>
+            @currHK.ToString("yyyy-MM-dd HH:mm:ss")
+        </CardBody>
+    </Card>
 
-Welcome to your new app.
+</div>
+
+@code {
+    private DateTime curr = DateTime.UtcNow;
+    private System.Timers.Timer _timer = new();
+
+    private DateTime currJP = DateTime.Now;
+    private DateTime currHK = DateTime.Now;
+
+
+    protected override void OnInitialized()
+    {
+        _timer.Interval = 1000;
+        _timer.Elapsed += async (object? sender, ElapsedEventArgs e) =>
+        {
+            curr = curr.AddSeconds(1);
+            currJP = curr.AddHours(9);
+            currHK = curr.AddHours(8);
+
+            await InvokeAsync(StateHasChanged);
+        };
+        _timer.Enabled = true;
+    }
+}

@@ -1,9 +1,12 @@
 ﻿@inherits LayoutComponentBase
 
+@using PresentationWebsite.Classes
+
 <div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+    <Sidebar2 Href="/"
+              Title="Weather (by gino)"
+              DataProvider="WebFunctions.GetMenu"
+              Style="background-color:#DDDDDD;" />
 
     <main>
         <div class="top-row px-4">
