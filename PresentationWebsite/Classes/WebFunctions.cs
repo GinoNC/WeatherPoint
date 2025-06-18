@@ -18,8 +18,9 @@ namespace PresentationWebsite.Classes
         {
             return
             [
-                new NavItem { Id = "1", Href = "/", IconName = IconName.House, Text = "Home" },
+                new NavItem { Id = "1", Href = "/dashboard", IconName = IconName.House, Text = "Dashboard" },
                 new NavItem { Id = "2", Href = "/dailychart", IconName = IconName.CloudSun, Text = "Daily" },
+                new NavItem { Id = "3", Href = "/copyright", IconName = IconName.CloudSun, Text = "CopyRight" },
             ];
         }
     }

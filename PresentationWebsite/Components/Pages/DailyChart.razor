@@ -1,13 +1,139 @@
 ﻿@page "/dailychart"
 
+
 @using CommonLibrary.Models
 
 
+<Preload />
+
 <div>
-    chart
+    <select @onchange="(e) => ChangePeriod(e.Value!)">
+        @foreach (string _s in Periods)
+        {
+            <option value=@_s selected=@(_s == PeriodCurrent)>@_s</option>
+        }
+    </select>
+</div>
+<div class="container-fluid overflow-x-auto">
+    <LineChart @ref="lineChart" Width="800" />
 </div>
 
 
 @code {
+    [Inject]
+    protected PreloadService Loading { get; set; } = default!;
 
+    private LineChart lineChart = default!;
+    private LineChartOptions lineChartOptions = default!;
+    private ChartData chartData = default!;
+
+    private List<string> Periods = [];
+    private string PeriodCurrent = DateTime.Today.Year.ToString();
+
+    private List<DailyTemp> tem = [];
+
+
+    protected override void OnInitialized()
+    {
+        Periods.Add("ALL");
+        DateTime temp = DateTime.Today;
+        do
+        {
+            Periods.Add(temp.ToString("yyyy"));
+            temp = temp.AddYears(-1);
+        } while (temp.Year >= 2020);
+
+
+        lineChartOptions = new();
+        lineChartOptions.Responsive = true;
+        lineChartOptions.Interaction = new Interaction { Mode = InteractionMode.Index };
+
+        lineChartOptions.Scales.X!.Title = new ChartAxesTitle { Text = "2019", Display = true };
+        lineChartOptions.Scales.Y!.Title = new ChartAxesTitle { Text = "Visitors", Display = true };
+
+        lineChartOptions.Plugins.Title!.Text = "Operating system";
+        lineChartOptions.Plugins.Title.Display = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            List<string> lbls = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            chartData = new ChartData { Labels = lbls, Datasets = [] };
+            await lineChart.InitializeAsync(chartData, lineChartOptions);
+
+            LoadData();
+        }
+    }
+
+    private async void LoadData()
+    {
+        Loading.Show();
+        await Task.Delay(1);
+
+        int yr = int.Parse(PeriodCurrent);
+        tem = await CommonLibrary.Procedure.GetListDailyTemp("Tokyo", yr);
+
+        var colors = ColorUtility.CategoricalTwelveColors;
+
+
+        List<IChartDataset> dts = [];
+
+        double? d1 = CalAverage(tem, yr, 1);
+        double? d2 = CalAverage(tem, yr, 2);
+        double? d3 = CalAverage(tem, yr, 3);
+        double? d4 = CalAverage(tem, yr, 4);
+        double? d5 = CalAverage(tem, yr, 5);
+        double? d6 = CalAverage(tem, yr, 6);
+        double? d7 = CalAverage(tem, yr, 7);
+        double? d8 = CalAverage(tem, yr, 8);
+        double? d9 = CalAverage(tem, yr, 9);
+        double? d10 = CalAverage(tem, yr, 10);
+        double? d11 = CalAverage(tem, yr, 11);
+        double? d12 = CalAverage(tem, yr, 12);
+
+        LineChartDataset ds1 = new()
+        {
+            Label = "Tokyo",
+            Data = new List<double?> { d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12 },
+            BackgroundColor = colors[0],
+            BorderColor = colors[0],
+            BorderWidth = 2,
+            HoverBorderWidth = 4,
+            // PointBackgroundColor = colors[0],
+            // PointRadius = 0, // hide points
+            // PointHoverRadius = 4,
+        };
+        dts.Add(ds1);
+
+        chartData.Datasets = dts;
+
+        await lineChart.UpdateValuesAsync(chartData);
+
+        Loading.Hide();
+        StateHasChanged();
+    }
+
+    private double? CalAverage(List<DailyTemp> tem, int yr, int mn)
+    {
+        try
+        {
+            tem = tem.Where(x => x.TheDate.Year == yr && x.TheDate.Month == mn).ToList();
+            if (tem.Count == 0) return null;
+
+            return (double)tem.Select(x => x.RefAverage).Average();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private void ChangePeriod(object _input)
+    {
+        PeriodCurrent = _input.ToString()!;
+
+        LoadData();
+    }
 }
